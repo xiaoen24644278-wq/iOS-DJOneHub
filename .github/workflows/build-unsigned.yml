@@ -1,0 +1,46 @@
+name: Build unsigned archive
+
+on:
+  push:
+    branches: [ ci/fix-build-compile ]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    name: Archive (unsigned)
+    runs-on: macos-13
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Xcode 16.4
+        uses: maxim-lobanov/setup-xcode@v2
+        with:
+          xcode-version: '16.4'
+
+      - name: Install dependencies (Carthage/CocoaPods/etc.)
+        run: |
+          echo "No additional dependency step configured."
+        shell: bash
+
+      - name: Build archive (unsigned)
+        env:
+          ARCHIVE_PATH: ${{ github.workspace }}/build/DJOneHub.xcarchive
+        run: |
+          set -e
+          mkdir -p $(dirname "$ARCHIVE_PATH")
+          xcodebuild -project DJOneHub.xcodeproj -scheme DJOneHub -configuration Release -destination "generic/platform=iOS" archive -archivePath "$ARCHIVE_PATH" CODE_SIGNING_ALLOWED=NO
+
+      - name: Zip archive
+        env:
+          ARCHIVE_PATH: ${{ github.workspace }}/build/DJOneHub.xcarchive
+          ARCHIVE_ZIP: ${{ github.workspace }}/build/DJOneHub.xcarchive.zip
+        run: |
+          set -e
+          ditto -c -k --keepParent "$ARCHIVE_PATH" "$ARCHIVE_ZIP"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DJOneHub.xcarchive.zip
+          path: build/DJOneHub.xcarchive.zip
