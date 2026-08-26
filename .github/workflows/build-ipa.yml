@@ -1,0 +1,133 @@
+name: Build IPA
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      configuration:
+        description: 'Build configuration'
+        required: true
+        default: 'Release'
+        type: choice
+        options:
+          - Debug
+          - Release
+
+jobs:
+  build:
+    name: Build DJOneHub iOS App
+    runs-on: macos-14
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode version
+        run: |
+          xcodebuild -version
+          xcrun xctrace list devices 2>&1 | head -5 || true
+
+      - name: Install XcodeGen
+        run: |
+          brew install xcodegen
+          xcodegen --version
+
+      - name: Generate Xcode project
+        run: |
+          xcodegen generate
+          ls -la *.xcodeproj
+
+      - name: Resolve package dependencies
+        run: |
+          xcodebuild -project DJOneHub.xcodeproj \
+            -scheme DJOneHub \
+            -destination 'generic/platform=iOS' \
+            -configuration Release \
+            resolvePackageDependencies || true
+
+      - name: Build for iOS (arm64)
+        run: |
+          xcodebuild \
+            -project DJOneHub.xcodeproj \
+            -scheme DJOneHub \
+            -destination 'generic/platform=iOS' \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Find built .app
+        run: |
+          APP_PATH=$(find build/Build/Products -name "DJOneHub.app" -type d | head -1)
+          echo "APP_PATH=$APP_PATH" >> $GITHUB_ENV
+          echo "Found app at: $APP_PATH"
+          ls -la "$APP_PATH"
+
+      - name: Create IPA package
+        run: |
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/
+          
+          # 移除模拟器架构（如果有）
+          APP_BINARY="Payload/DJOneHub.app/DJOneHub"
+          if [ -f "$APP_BINARY" ]; then
+            echo "Binary architectures:"
+            lipo -info "$APP_BINARY" || true
+          fi
+          
+          # 打包成 IPA
+          zip -r DJOneHub-iOS-v1.0.0.ipa Payload
+          
+          # 清理
+          rm -rf Payload
+          
+          echo "=== IPA 文件信息 ==="
+          ls -lh DJOneHub-iOS-v1.0.0.ipa
+          unzip -l DJOneHub-iOS-v1.0.0.ipa | head -20
+
+      - name: Create dSYM (optional)
+        run: |
+          DSYM_PATH=$(find build/Build/Products -name "DJOneHub.app.dSYM" -type d | head -1)
+          if [ -n "$DSYM_PATH" ]; then
+            zip -r DJOneHub-dSYM.zip "$DSYM_PATH"
+            echo "dSYM created"
+          else
+            echo "No dSYM found"
+          fi
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DJOneHub-iOS-IPA
+          path: DJOneHub-iOS-v1.0.0.ipa
+          retention-days: 30
+
+      - name: Upload dSYM artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: DJOneHub-dSYM
+          path: DJOneHub-dSYM.zip
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Build summary
+        run: |
+          echo "## 构建完成 ✅" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **应用名称**: DJOneHub" >> $GITHUB_STEP_SUMMARY
+          echo "- **版本**: 1.0.0" >> $GITHUB_STEP_SUMMARY
+          echo "- **配置**: Release" >> $GITHUB_STEP_SUMMARY
+          echo "- **目标平台**: iOS (arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "IPA 文件已作为 Artifact 上传，可在本次运行的 Artifacts 区域下载。" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 安装说明" >> $GITHUB_STEP_SUMMARY
+          echo "由于此 IPA 未使用开发者证书签名，需要使用以下工具侧载安装：" >> $GITHUB_STEP_SUMMARY
+          echo "- [Sideloadly](https://sideloadly.io/) (推荐，Windows/Mac 都支持)" >> $GITHUB_STEP_SUMMARY
+          echo "- [AltStore](https://altstore.io/)" >> $GITHUB_STEP_SUMMARY
+          echo "- [3uTools](https://www.3u.com/)" >> $GITHUB_STEP_SUMMARY
