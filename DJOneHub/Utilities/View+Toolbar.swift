@@ -7,6 +7,6 @@ extension View {
     func myToolbar<ToolbarContent: SwiftUI.ToolbarContent>(
         @ToolbarContentBuilder content: () -> ToolbarContent
     ) -> some View {
-        self.toolbar(content: content())
+        self.toolbar(content: content)
     }
 }

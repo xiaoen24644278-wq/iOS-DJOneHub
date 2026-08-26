@@ -1,4 +1,4 @@
-﻿import SwiftUI
+import SwiftUI
 
 // MARK: - AT 指令控制台
 struct ATConsoleView: View {
@@ -88,7 +88,7 @@ struct ATConsoleView: View {
         }
         .navigationTitle("AT 控制台")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(content: atConsoleToolbar)
+        .myToolbar { atConsoleToolbar }
     }
     
     @ToolbarContentBuilder
