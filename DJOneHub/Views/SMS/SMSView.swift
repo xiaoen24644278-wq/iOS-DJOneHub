@@ -37,7 +37,7 @@ struct SMSView: View {
         }
         .navigationTitle("短信")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(id: "smsview") {
+        .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
                     Task {
@@ -94,7 +94,7 @@ struct SMSListView: View {
                 await viewModel.loadFromModule()
             }
         }
-        .toolbar(id: "smsview") {
+        .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
                     showingNewMessage = true
@@ -335,7 +335,7 @@ struct SMSComposeView: View {
             }
             .navigationTitle("新建短信")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(id: "smsview") {
+            .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("取消") {
                         dismiss()

@@ -88,7 +88,7 @@ struct ATConsoleView: View {
         }
         .navigationTitle("AT 控制台")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(id: "atconsoleview") {
+        .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
                     Button {
@@ -167,7 +167,7 @@ struct eSIMManagerView: View {
         .listStyle(.insetGrouped)
         .navigationTitle("eSIM 管理")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(id: "atconsoleview") {
+        .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
                     showingAddProfile = true
@@ -305,7 +305,7 @@ struct AddeSIMProfileView: View {
             }
             .navigationTitle("添加 eSIM")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(id: "atconsoleview") {
+            .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("取消") {
                         dismiss()

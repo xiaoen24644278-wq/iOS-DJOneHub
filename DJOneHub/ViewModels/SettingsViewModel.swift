@@ -8,7 +8,7 @@ final class SettingsViewModel: ObservableObject {
     @Published var moduleStatus = ModuleStatus.disconnected
     @Published var networkStatus = NetworkStatus.disconnected
     @Published var gpsStatus = GPSStatus.disabled
-    @Published var eSIMStatus = eSIMStatus.empty
+    @Published var eSIMStatus: eSIMStatus = .empty
     @Published var trafficStats = TrafficStats.zero
     
     // 设置项
