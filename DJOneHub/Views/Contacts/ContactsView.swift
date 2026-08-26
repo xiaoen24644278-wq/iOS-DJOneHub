@@ -60,7 +60,7 @@ struct ContactsView: View {
                 .navigationTitle("通讯录")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
+                    ToolbarItemGroup(placement: .navigationBarTrailing) {
                         Button {
                             showingAddContact = true
                         } label: {
@@ -263,12 +263,12 @@ struct AddContactView: View {
             .navigationTitle("新建联系人")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ToolbarItemGroup(placement: .cancellationAction) {
                     Button("取消") {
                         dismiss()
                     }
                 }
-                ToolbarItem(placement: .confirmationAction) {
+                ToolbarItemGroup(placement: .confirmationAction) {
                     Button("保存") {
                         Task {
                             await viewModel.addContact(

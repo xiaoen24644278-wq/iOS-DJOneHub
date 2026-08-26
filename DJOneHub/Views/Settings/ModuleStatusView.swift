@@ -231,12 +231,12 @@ struct NetworkDiagnosticsView: View {
             .navigationTitle("网络诊断")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ToolbarItemGroup(placement: .cancellationAction) {
                     Button("关闭") {
                         dismiss()
                     }
                 }
-                ToolbarItem(placement: .confirmationAction) {
+                ToolbarItemGroup(placement: .confirmationAction) {
                     Button("重新诊断") {
                         runDiagnostics()
                     }

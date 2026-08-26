@@ -175,7 +175,7 @@ struct CallHistoryView: View {
             // 刷新通话记录（从本地加载）
         }
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
                 Menu {
                     Button(role: .destructive) {
                         viewModel.clearCallRecords()
