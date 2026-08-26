@@ -2,7 +2,7 @@ name: DJOneHub
 options:
   bundleIdPrefix: com.djonehub
   deploymentTarget:
-    iOS: "16.0"
+    iOS: "17.0"
   createIntermediateGroups: true
   developmentLanguage: zh-Hans
   objectVersion: 60
@@ -15,7 +15,7 @@ settings:
     OTHER_SWIFT_FLAGS: "-swift-version 5"
     SWIFT_TREAT_WARNINGS_AS_ERRORS: NO
     ENABLE_BITCODE: NO
-    IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
     TARGETED_DEVICE_FAMILY: "1,2"
     SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
     CODE_SIGN_STYLE: Automatic
@@ -82,7 +82,7 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
-        IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
         SWIFT_VERSION: "5.0"
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks"
         CODE_SIGN_STYLE: Automatic
