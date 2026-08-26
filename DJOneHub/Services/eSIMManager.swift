@@ -8,7 +8,7 @@ final class eSIMManager: ObservableObject {
     static let shared = eSIMManager()
     
     // MARK: - 发布属性
-    @Published private(set) var eSIMStatus = eSIMStatus.empty
+    @Published private(set) var eSIMStatus: eSIMStatus = .empty
     @Published private(set) var isLoading = false
     @Published private(set) var isProcessing = false
     

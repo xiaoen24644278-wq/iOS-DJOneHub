@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 // MARK: - 模块状态视图
 struct ModuleStatusView: View {
@@ -230,7 +230,7 @@ struct NetworkDiagnosticsView: View {
             .listStyle(.insetGrouped)
             .navigationTitle("网络诊断")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("关闭") {
                         dismiss()

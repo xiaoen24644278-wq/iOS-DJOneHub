@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 // MARK: - 电话主视图
 struct PhoneView: View {
@@ -174,7 +174,7 @@ struct CallHistoryView: View {
         .refreshable {
             // 刷新通话记录（从本地加载）
         }
-        .toolbar {
+        .toolbar(content: {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
                     Button(role: .destructive) {

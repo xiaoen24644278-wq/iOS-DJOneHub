@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 // MARK: - AT 指令控制台
 struct ATConsoleView: View {
@@ -88,7 +88,7 @@ struct ATConsoleView: View {
         }
         .navigationTitle("AT 控制台")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
+        .toolbar(content: {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
                     Button {
@@ -167,7 +167,7 @@ struct eSIMManagerView: View {
         .listStyle(.insetGrouped)
         .navigationTitle("eSIM 管理")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
+        .toolbar(content: {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
                     showingAddProfile = true
@@ -305,7 +305,7 @@ struct AddeSIMProfileView: View {
             }
             .navigationTitle("添加 eSIM")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("取消") {
                         dismiss()

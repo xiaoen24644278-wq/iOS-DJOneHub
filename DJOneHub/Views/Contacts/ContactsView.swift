@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 // MARK: - 通讯录主视图
 struct ContactsView: View {
@@ -59,7 +59,7 @@ struct ContactsView: View {
                 .listStyle(.plain)
                 .navigationTitle("通讯录")
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
+                .toolbar(content: {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Button {
                             showingAddContact = true
@@ -262,7 +262,7 @@ struct AddContactView: View {
             }
             .navigationTitle("新建联系人")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("取消") {
                         dismiss()
