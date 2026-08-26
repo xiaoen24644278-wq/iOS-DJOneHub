@@ -24,7 +24,8 @@ final class ATCommandManager: ObservableObject {
     // MARK: - 私有属性
     private let usbManager = USBCommunicationManager.shared
     private var responseBuffer = ""
-    private let responseLock = NSLock()
+    // 使用串行队列替代 NSLock，保证在异步上下文中安全
+    private let responseQueue = DispatchQueue(label: "com.djonehub.atcommand.response")
     private var commandQueue = DispatchQueue(label: "com.djonehub.atcommand", qos: .userInitiated)
     private var statusUpdateTimer: Timer?
     private var isListeningForURC = false
@@ -64,9 +65,9 @@ final class ATCommandManager: ObservableObject {
     private func handleReceivedData(_ data: Data) {
         guard let text = String(data: data, encoding: .utf8) else { return }
         
-        responseLock.lock()
-        responseBuffer += text
-        responseLock.unlock()
+        responseQueue.sync {
+            responseBuffer += text
+        }
         
         // 检查 URC（Unsolicited Result Code）- 主动上报
         processURC(text)
@@ -114,9 +115,9 @@ final class ATCommandManager: ObservableObject {
         lastCommand = command
         
         // 清空响应缓冲区
-        responseLock.lock()
-        responseBuffer = ""
-        responseLock.unlock()
+        responseQueue.sync {
+            responseBuffer = ""
+        }
         
         // 发送命令
         let success = usbManager.send(command: command)
@@ -153,9 +154,10 @@ final class ATCommandManager: ObservableObject {
         let startTime = Date()
         
         while Date().timeIntervalSince(startTime) < timeout {
-            responseLock.lock()
-            let buffer = responseBuffer
-            responseLock.unlock()
+            var buffer = ""
+            responseQueue.sync {
+                buffer = responseBuffer
+            }
             
             // 检查是否收到完整响应（以 OK 或 ERROR 结尾）
             if buffer.hasSuffix("OK\r\n") || 
@@ -169,9 +171,10 @@ final class ATCommandManager: ObservableObject {
         }
         
         // 超时，返回已收到的内容
-        responseLock.lock()
-        let buffer = responseBuffer
-        responseLock.unlock()
+        var buffer = ""
+        responseQueue.sync {
+            buffer = responseBuffer
+        }
         
         if buffer.isEmpty {
             throw ATError.timeout
