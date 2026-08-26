@@ -174,7 +174,7 @@ struct CallHistoryView: View {
         .refreshable {
             // 刷新通话记录（从本地加载）
         }
-        .toolbar {
+        .myToolbar {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
                 Menu {
                     Button(role: .destructive) {

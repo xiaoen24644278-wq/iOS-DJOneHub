@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import Contacts
 
 // MARK: - 通讯录视图模型
 final class ContactsViewModel: ObservableObject {

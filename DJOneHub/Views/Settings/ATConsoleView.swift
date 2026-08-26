@@ -88,36 +88,40 @@ struct ATConsoleView: View {
         }
         .navigationTitle("AT 控制台")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItemGroup(placement: .navigationBarTrailing) {
-                Menu {
-                    Button {
-                        commandInput = "AT"
-                    } label: {
-                        Label("AT (测试)", systemImage: "circle")
-                    }
-                    Button {
-                        commandInput = "AT+CSQ"
-                    } label: {
-                        Label("AT+CSQ (信号)", systemImage: "antenna.radiowaves.left.and.right")
-                    }
-                    Button {
-                        commandInput = "AT+COPS?"
-                    } label: {
-                        Label("AT+COPS? (运营商)", systemImage: "network")
-                    }
-                    Button {
-                        commandInput = "AT+CPIN?"
-                    } label: {
-                        Label("AT+CPIN? (SIM状态)", systemImage: "simcard")
-                    }
-                    Button {
-                        commandInput = "AT+CGSN"
-                    } label: {
-                        Label("AT+CGSN (IMEI)", systemImage: "number")
-                    }
+        .toolbar(content: atConsoleToolbar)
+    }
+    
+    @ToolbarContentBuilder
+    private var atConsoleToolbar: some ToolbarContent {
+        ToolbarItemGroup(placement: .navigationBarTrailing) {
+            Menu {
+                Button {
+                    commandInput = "AT"
                 } label: {
-                    Image(systemName: "ellipsis.circle")
+                    Label("AT (测试)", systemImage: "circle")
+                }
+                Button {
+                    commandInput = "AT+CSQ"
+                } label: {
+                    Label("AT+CSQ (信号)", systemImage: "antenna.radiowaves.left.and.right")
+                }
+                Button {
+                    commandInput = "AT+COPS?"
+                } label: {
+                    Label("AT+COPS? (运营商)", systemImage: "network")
+                }
+                Button {
+                    commandInput = "AT+CPIN?"
+                } label: {
+                    Label("AT+CPIN? (SIM状态)", systemImage: "simcard")
+                }
+                Button {
+                    commandInput = "AT+CGSN"
+                } label: {
+                    Label("AT+CGSN (IMEI)", systemImage: "number")
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
                 }
             }
         }
@@ -167,7 +171,7 @@ struct eSIMManagerView: View {
         .listStyle(.insetGrouped)
         .navigationTitle("eSIM 管理")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
+        .myToolbar {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
                 Button {
                     showingAddProfile = true
@@ -305,7 +309,7 @@ struct AddeSIMProfileView: View {
             }
             .navigationTitle("添加 eSIM")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .myToolbar {
                 ToolbarItemGroup(placement: .cancellationAction) {
                     Button("取消") {
                         dismiss()

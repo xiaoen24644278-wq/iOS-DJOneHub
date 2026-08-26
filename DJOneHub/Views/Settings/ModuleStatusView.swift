@@ -230,7 +230,7 @@ struct NetworkDiagnosticsView: View {
             .listStyle(.insetGrouped)
             .navigationTitle("网络诊断")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .myToolbar {
                 ToolbarItemGroup(placement: .cancellationAction) {
                     Button("关闭") {
                         dismiss()
