@@ -44,7 +44,7 @@ final class SettingsViewModel: ObservableObject {
     private let atManager = ATCommandManager.shared
     private let networkManager = NetworkManager.shared
     private let gpsManager = GPSManager.shared
-    private let eSIMManager = eSIMManager.shared
+    private let eSIMManager: eSIMManager = .shared
     private let userDefaults = UserDefaults.standard
     
     // MARK: - 取消包
