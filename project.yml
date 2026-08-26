@@ -5,6 +5,7 @@ options:
     iOS: "16.0"
   createIntermediateGroups: true
   developmentLanguage: zh-Hans
+  objectVersion: 60
 
 settings:
   base:
