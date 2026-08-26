@@ -1,4 +1,4 @@
-name: Build unsigned archive
+name: Build unsigned archive and unsigned IPA
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Archive (unsigned)
+    name: Archive (unsigned) + unsigned IPA
     runs-on: macos-13
     steps:
       - name: Checkout
@@ -39,8 +39,31 @@ jobs:
           set -e
           ditto -c -k --keepParent "$ARCHIVE_PATH" "$ARCHIVE_ZIP"
 
-      - name: Upload artifact
+      - name: Create unsigned IPA from .app inside archive
+        env:
+          ARCHIVE_PATH: ${{ github.workspace }}/build/DJOneHub.xcarchive
+          UNSIGNED_IPA: ${{ github.workspace }}/build/DJOneHub-unsigned.ipa
+        run: |
+          set -e
+          APP_DIR=$(ls "$ARCHIVE_PATH/Products/Applications"/*.app | head -n 1)
+          if [ -z "$APP_DIR" ]; then
+            echo "No .app found in archive at $ARCHIVE_PATH/Products/Applications"
+            exit 1
+          fi
+          echo "Found app: $APP_DIR"
+          mkdir -p build/Payload
+          cp -R "$APP_DIR" build/Payload/
+          pushd build
+          # Create unsigned ipa by zipping the Payload folder
+          zip -r "$(basename "$UNSIGNED_IPA")" Payload
+          popd
+          # move created zip to expected path
+          mv build/$(basename "$UNSIGNED_IPA") "$UNSIGNED_IPA"
+
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: DJOneHub.xcarchive.zip
-          path: build/DJOneHub.xcarchive.zip
+          name: unsigned-artifacts
+          path: |
+            build/DJOneHub.xcarchive.zip
+            build/DJOneHub-unsigned.ipa
