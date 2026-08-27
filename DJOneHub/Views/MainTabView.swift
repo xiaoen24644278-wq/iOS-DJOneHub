@@ -62,9 +62,11 @@ struct MainTabView: View {
     
     // MARK: - iPad 横屏侧边栏
     private var sidebarContent: some View {
-        List(Tab.allCases, id: \.self, selection: $selectedTab) { tab in
-            Label(tab.rawValue, systemImage: tab.systemImage)
-                .tag(tab)
+        List(selection: $selectedTab) {
+            ForEach(Tab.allCases, id: \.self) { tab in
+                Label(tab.rawValue, systemImage: tab.systemImage)
+                    .tag(tab)
+            }
         }
         .listStyle(.sidebar)
         .navigationTitle("DJOneHub")
@@ -102,7 +104,7 @@ struct MainTabView: View {
         .tabItem {
             Label("短信", systemImage: "message.fill")
         }
-        .badge(smsViewModel.unreadCount > 0 ? smsViewModel.unreadCount : nil)
+        .badge(smsViewModel.unreadCount)
         .tag(Tab.sms)
         
         NavigationStack {

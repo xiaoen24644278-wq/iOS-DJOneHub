@@ -41,9 +41,9 @@ final class SettingsViewModel: ObservableObject {
     @Published var isAtExecuting = false
     
     // MARK: - 服务引用
-    private let atManager = ATCommandManager.shared
-    private let networkManager = NetworkManager.shared
-    private let gpsManager = GPSManager.shared
+    let atManager = ATCommandManager.shared
+    let networkManager = NetworkManager.shared
+    let gpsManager = GPSManager.shared
     let eSIMManager: eSIMManager = .shared
     private let userDefaults = UserDefaults.standard
     

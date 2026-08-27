@@ -1,4 +1,4 @@
-﻿import SwiftUI
+import SwiftUI
 
 // MARK: - 模块状态视图
 struct ModuleStatusView: View {
@@ -113,88 +113,105 @@ struct NetworkSettingsView: View {
     
     var body: some View {
         List {
-            // 数据开关
-            Section {
-                ToggleRow(
-                    title: "移动数据",
-                    systemImage: "antenna.radiowaves.left.and.right",
-                    isOn: Binding(
-                        get: { viewModel.dataEnabled },
-                        set: { viewModel.setDataEnabled($0) }
-                    )
-                )
-                
-                ToggleRow(
-                    title: "数据漫游",
-                    systemImage: "globe",
-                    isOn: $viewModel.roamingEnabled,
-                    subtitle: "在国外使用移动数据"
-                )
-            }
-            
-            // 网络模式
-            Section("网络模式") {
-                Picker(selection: $viewModel.networkMode) {
-                    ForEach(NetworkStatus.NetworkMode.allCases, id: \.self) { mode in
-                        Text(mode.rawValue).tag(mode)
-                    }
-                } label: {
-                    Text("首选网络类型")
-                }
-                .pickerStyle(.menu)
-                .onChange(of: viewModel.networkMode) { newValue in
-                    viewModel.setNetworkMode(newValue)
-                }
-            }
-            
-            // APN 设置
-            Section("APN 设置") {
-                HStack {
-                    Text("APN")
-                    TextField("输入 APN", text: $viewModel.apn)
-                        .multilineTextAlignment(.trailing)
-                        .onSubmit {
-                            viewModel.setAPN(viewModel.apn)
-                        }
-                }
-            }
-            
-            // 网络状态
-            Section("当前状态") {
-                InfoRow(title: "接口类型", value: viewModel.networkStatus.interfaceType.rawValue)
-                InfoRow(title: "IP 地址", value: viewModel.networkStatus.ipAddress ?? "-")
-                InfoRow(title: "信号强度", value: "\(viewModel.networkStatus.signalStrength)")
-            }
-            
-            // 流量统计
-            Section("流量统计") {
-                InfoRow(title: "本次发送", value: viewModel.trafficStats.sessionSentString)
-                InfoRow(title: "本次接收", value: viewModel.trafficStats.sessionReceivedString)
-                InfoRow(title: "总计发送", value: viewModel.trafficStats.totalSentString)
-                InfoRow(title: "总计接收", value: viewModel.trafficStats.totalReceivedString)
-            }
-            
-            // 诊断
-            Section {
-                Button {
-                    showingDiagnostics = true
-                } label: {
-                    HStack {
-                        Image(systemName: "stethoscope")
-                            .foregroundColor(.accentColor)
-                        Text("网络诊断")
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(.secondary)
-                    }
-                }
-            }
+            listContent
         }
         .listStyle(.insetGrouped)
         .navigationTitle("移动网络")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showingDiagnostics) {
             NetworkDiagnosticsView(viewModel: viewModel)
+        }
+    }
+    
+    @ViewBuilder
+    private var listContent: some View {
+        dataSection
+        networkModeSection
+        apnSection
+        statusSection
+        trafficSection
+        diagnosticsSection
+    }
+    
+    private var dataSection: some View {
+        Section {
+            ToggleRow(
+                title: "移动数据",
+                systemImage: "antenna.radiowaves.left.and.right",
+                isOn: Binding(
+                    get: { viewModel.dataEnabled },
+                    set: { viewModel.setDataEnabled($0) }
+                )
+            )
+            ToggleRow(
+                title: "数据漫游",
+                systemImage: "globe",
+                isOn: $viewModel.roamingEnabled,
+                subtitle: "在国外使用移动数据"
+            )
+        }
+    }
+    
+    private var networkModeSection: some View {
+        Section("网络模式") {
+            Picker(selection: $viewModel.networkMode) {
+                ForEach(NetworkStatus.NetworkMode.allCases, id: \.self) { mode in
+                    Text(mode.rawValue).tag(mode)
+                }
+            } label: {
+                Text("首选网络类型")
+            }
+            .pickerStyle(.menu)
+            .onChange(of: viewModel.networkMode) { newValue in
+                viewModel.setNetworkMode(newValue)
+            }
+        }
+    }
+    
+    private var apnSection: some View {
+        Section("APN 设置") {
+            HStack {
+                Text("APN")
+                TextField("输入 APN", text: $viewModel.apn)
+                    .multilineTextAlignment(.trailing)
+                    .onSubmit {
+                        viewModel.setAPN(viewModel.apn)
+                    }
+            }
+        }
+    }
+    
+    private var statusSection: some View {
+        Section("当前状态") {
+            InfoRow(title: "接口类型", value: viewModel.networkStatus.interfaceType.rawValue)
+            InfoRow(title: "IP 地址", value: viewModel.networkStatus.ipAddress ?? "-")
+            InfoRow(title: "信号强度", value: "\(viewModel.networkStatus.signalStrength)")
+        }
+    }
+    
+    private var trafficSection: some View {
+        Section("流量统计") {
+            InfoRow(title: "本次发送", value: viewModel.trafficStats.sessionSentString)
+            InfoRow(title: "本次接收", value: viewModel.trafficStats.sessionReceivedString)
+            InfoRow(title: "总计发送", value: viewModel.trafficStats.totalSentString)
+            InfoRow(title: "总计接收", value: viewModel.trafficStats.totalReceivedString)
+        }
+    }
+    
+    private var diagnosticsSection: some View {
+        Section {
+            Button {
+                showingDiagnostics = true
+            } label: {
+                HStack {
+                    Image(systemName: "stethoscope")
+                        .foregroundColor(.accentColor)
+                    Text("网络诊断")
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .foregroundColor(.secondary)
+                }
+            }
         }
     }
 }
