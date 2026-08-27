@@ -23,11 +23,17 @@ final class ATCommandManager: ObservableObject {
     
     // MARK: - 私有属性
     private let usbManager = USBCommunicationManager.shared
+    private let networkManager = NetworkCommunicationManager.shared
     private var responseBuffer = ""
     private let responseLock = NSLock()
     private var commandQueue = DispatchQueue(label: "com.djonehub.atcommand", qos: .userInitiated)
     private var statusUpdateTimer: Timer?
     private var isListeningForURC = false
+    
+    /// 当前使用的通信方式
+    private var useNetwork: Bool {
+        return networkManager.isConnected
+    }
     
     // MARK: - 命令记录
     struct CommandRecord: Identifiable {
@@ -44,13 +50,28 @@ final class ATCommandManager: ObservableObject {
         startStatusMonitoring()
     }
     
-    // MARK: - USB 回调设置
+    // MARK: - USB/网络 回调设置
     private func setupUSBCallbacks() {
+        // USB 回调
         usbManager.onDataReceived = { [weak self] data in
             self?.handleReceivedData(data)
         }
         
         usbManager.onConnectionStateChanged = { [weak self] connected in
+            if connected {
+                self?.initializeModule()
+            } else {
+                self?.moduleStatus = .disconnected
+                self?.stopStatusMonitoring()
+            }
+        }
+        
+        // 网络回调
+        networkManager.onDataReceived = { [weak self] data in
+            self?.handleReceivedData(data)
+        }
+        
+        networkManager.onConnectionStateChanged = { [weak self] connected in
             if connected {
                 self?.initializeModule()
             } else {
@@ -106,6 +127,12 @@ final class ATCommandManager: ObservableObject {
     
     // MARK: - 发送 AT 指令并等待响应
     func sendCommand(_ command: String, timeout: TimeInterval = 5.0) async throws -> String {
+        // 如果网络已连接，优先通过网络发送
+        if useNetwork {
+            return try await sendCommandViaNetwork(command, timeout: timeout)
+        }
+        
+        // 否则通过 USB 发送
         guard usbManager.isConnected else {
             throw ATError.deviceNotConnected
         }
@@ -146,6 +173,38 @@ final class ATCommandManager: ObservableObject {
         }
         
         return response
+    }
+    
+    // MARK: - 通过网络发送 AT 指令
+    private func sendCommandViaNetwork(_ command: String, timeout: TimeInterval) async throws -> String {
+        isCommandExecuting = true
+        lastCommand = command
+        
+        do {
+            let response = try await networkManager.sendATCommand(command, timeout: timeout)
+            
+            isCommandExecuting = false
+            lastResponse = response
+            
+            // 记录历史
+            let isSuccess = !response.contains("ERROR")
+            commandHistory.insert(
+                CommandRecord(command: command, response: response, timestamp: Date(), success: isSuccess),
+                at: 0
+            )
+            if commandHistory.count > 100 {
+                commandHistory.removeLast()
+            }
+            
+            if response.contains("ERROR") {
+                throw ATError.commandError(response)
+            }
+            
+            return response
+        } catch {
+            isCommandExecuting = false
+            throw error
+        }
     }
     
     // MARK: - 等待响应
@@ -205,8 +264,8 @@ final class ATCommandManager: ObservableObject {
     func refreshModuleStatus() async {
         do {
             var status = ModuleStatus.disconnected
-            status.isConnected = usbManager.isConnected
-            status.deviceName = usbManager.connectedAccessory?.name ?? "DJI 4G Module"
+            status.isConnected = useNetwork ? networkManager.isConnected : usbManager.isConnected
+            status.deviceName = useNetwork ? (networkManager.moduleIP ?? "DJI 4G Module") : (usbManager.connectedAccessory?.name ?? "DJI 4G Module")
             
             // 读取 IMEI
             let imeiResponse = try await sendCommand("AT+CGSN")

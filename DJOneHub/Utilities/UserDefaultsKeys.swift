@@ -6,6 +6,8 @@ enum UserDefaultsKeys {
     static let autoConnect = "auto_connect"
     static let connectionMode = "connection_mode"  // iPhone / iPad / Full
     static let usbConfig = "usb_config"
+    static let moduleIP = "module_ip"
+    static let modulePort = "module_port"
     
     // 网络设置
     static let dataEnabled = "data_enabled"

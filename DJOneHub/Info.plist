@@ -55,6 +55,19 @@
 	<string>需要麦克风权限以进行通话</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>需要访问照片以保存通话录音和短信截图</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>需要访问本地网络以通过 USB ECM 与大疆 4G 模块通信</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_djonehub._tcp</string>
+	</array>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+	</dict>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>

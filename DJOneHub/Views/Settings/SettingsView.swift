@@ -54,6 +54,16 @@ struct SettingsView: View {
                         value: viewModel.connectionMode.displayName
                     )
                 }
+                
+                NavigationLink {
+                    ModuleDiscoveryView()
+                } label: {
+                    NavigationRow(
+                        title: "模块连接（网络）",
+                        systemImage: "network",
+                        value: NetworkCommunicationManager.shared.isConnected ? "已连接" : "未连接"
+                    )
+                }
             }
             
             // 网络设置
