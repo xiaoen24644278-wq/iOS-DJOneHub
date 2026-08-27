@@ -37,7 +37,7 @@ final class NetworkCommunicationManager: NSObject, ObservableObject {
         "10.0.0.1"
     ]
     
-    private let commonPorts = [80, 8080, 8000, 5000, 3000]
+    private let commonPorts = [7575, 8080, 8000, 5000, 3000, 80]
     
     // MARK: - 已发现的模块
     struct DiscoveredModule: Identifiable {
@@ -121,14 +121,18 @@ final class NetworkCommunicationManager: NSObject, ObservableObject {
                 return nil
             }
             
-            // 尝试解析响应，获取模块名称
-            var name = "DJI Module"
+            // 尝试解析响应，确认是 DjiModemSuite
+            var name = "DjiModemSuite"
             if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let moduleName = json["name"] as? String {
-                name = moduleName
+               let ok = json["Ok"] as? Bool, ok {
+                if let dataObj = json["Data"] as? [String: Any],
+                   let model = dataObj["Model"] as? String {
+                    name = "DjiModemSuite (\(model))"
+                }
+                return DiscoveredModule(ip: ip, port: port, name: name)
             }
             
-            return DiscoveredModule(ip: ip, port: port, name: name)
+            return nil
         } catch {
             return nil
         }
@@ -266,11 +270,19 @@ final class NetworkCommunicationManager: NSObject, ObservableObject {
             throw NetworkError.httpError(statusCode: httpResponse.statusCode)
         }
         
-        // 解析响应
-        if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-           let result = json["response"] as? String {
-            return result
-        } else if let text = String(data: data, encoding: .utf8) {
+        // 解析响应（DjiModemSuite 格式：{"Ok": true, "Data": "...", "Error": ""}）
+        if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            if let ok = json["Ok"] as? Bool, ok {
+                if let result = json["Data"] as? String {
+                    return result
+                }
+                return ""
+            } else if let error = json["Error"] as? String {
+                throw NetworkError.apiError(message: error)
+            }
+        }
+        
+        if let text = String(data: data, encoding: .utf8) {
             return text
         } else {
             throw NetworkError.invalidResponse
@@ -338,6 +350,7 @@ extension NetworkCommunicationManager {
         case invalidURL
         case invalidResponse
         case httpError(statusCode: Int)
+        case apiError(message: String)
         case connectionFailed
         case timeout
         
@@ -351,6 +364,8 @@ extension NetworkCommunicationManager {
                 return "无效的响应"
             case .httpError(let statusCode):
                 return "HTTP 错误: \(statusCode)"
+            case .apiError(let message):
+                return "API 错误: \(message)"
             case .connectionFailed:
                 return "连接失败"
             case .timeout:
