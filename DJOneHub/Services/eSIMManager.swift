@@ -1,6 +1,9 @@
 import Foundation
 import Combine
 
+// 类型别名，避免属性名与类型名冲突导致循环引用
+typealias EStatus = eSIMStatus
+
 // MARK: - eSIM / eUICC 管理器
 final class eSIMManager: ObservableObject {
     
@@ -103,8 +106,8 @@ final class eSIMManager: ObservableObject {
     }
     
     // MARK: - 解析 Profile 列表
-    private func parseProfiles(_ response: String) -> [eSIMStatus.eSIMProfile] {
-        var profiles: [eSIMStatus.eSIMProfile] = []
+    private func parseProfiles(_ response: String) -> [EStatus.eSIMProfile] {
+        var profiles: [EStatus.eSIMProfile] = []
         
         let lines = response.components(separatedBy: .newlines)
         for line in lines {
@@ -118,14 +121,14 @@ final class eSIMManager: ObservableObject {
                     let name = components[2].trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "\"", with: "")
                     let provider = components[3].trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "\"", with: "")
                     
-                    let state: eSIMStatus.eSIMProfile.ProfileState
+                    let state: EStatus.eSIMProfile.ProfileState
                     switch stateStr {
                     case "1": state = .enabled
                     case "0": state = .disabled
                     default: state = .disabled
                     }
                     
-                    let profile = eSIMStatus.eSIMProfile(
+                    let profile = EStatus.eSIMProfile(
                         id: iccid,
                         iccid: iccid,
                         name: name,
