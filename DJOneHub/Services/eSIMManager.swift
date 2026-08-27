@@ -24,7 +24,7 @@ final class eSIMManager: ObservableObject {
         defer { isLoading = false }
         
         do {
-            var status = eSIMStatus.empty
+            var status: eSIMStatus = .empty
             
             // 读取 EID
             let eidResponse = try await atManager.sendCommand("AT+EID?")

@@ -62,10 +62,21 @@ struct MainTabView: View {
     
     // MARK: - iPad 横屏侧边栏
     private var sidebarContent: some View {
-        List(selection: $selectedTab) {
+        List {
             ForEach(Tab.allCases, id: \.self) { tab in
-                Label(tab.rawValue, systemImage: tab.systemImage)
-                    .tag(tab)
+                Button {
+                    selectedTab = tab
+                } label: {
+                    HStack {
+                        Label(tab.rawValue, systemImage: tab.systemImage)
+                        Spacer()
+                        if selectedTab == tab {
+                            Image(systemName: "checkmark")
+                                .foregroundColor(.accentColor)
+                        }
+                    }
+                }
+                .foregroundColor(selectedTab == tab ? .accentColor : .primary)
             }
         }
         .listStyle(.sidebar)

@@ -22,7 +22,7 @@ struct NetworkStatus: Equatable {
         case usb = "USB 网络"
     }
     
-    enum NetworkMode: String, Equatable {
+    enum NetworkMode: String, Equatable, CaseIterable {
         case auto = "自动"
         case gsmOnly = "仅 GSM"
         case wcdmaOnly = "仅 WCDMA"
