@@ -243,7 +243,7 @@ final class ModuleConnectionManager: ObservableObject {
     }
 
     private func probeTCP(ip: String, port: Int) async -> Bool {
-        await withCheckedContinuation { cont in
+        return await withCheckedContinuation { cont in
             let conn = NWConnection(
                 host: NWEndpoint.Host(ip),
                 port: NWEndpoint.Port(rawValue: UInt16(port))!,
@@ -288,7 +288,7 @@ final class ModuleConnectionManager: ObservableObject {
             using: .tcp
         )
         tcpConnection = conn
-        await withCheckedContinuation { (cont: CheckedContinuation<Bool, Never>) in
+        return await withCheckedContinuation { (cont: CheckedContinuation<Bool, Never>) in
             var resumed = false
             conn.stateUpdateHandler = { [weak self] state in
                 switch state {
