@@ -119,7 +119,7 @@ private struct SidebarList: View {
     @Binding var selectedTab: MainTabView.Tab
 
     var body: some View {
-        List(selection: $selectedTab) {
+        List {
             Section {
                 ForEach(MainTabView.Tab.allCases, id: \.self) { tab in
                     SidebarRow(tab: tab, isSelected: selectedTab == tab) {
