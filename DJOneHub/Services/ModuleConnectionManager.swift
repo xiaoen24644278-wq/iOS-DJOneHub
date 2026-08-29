@@ -140,8 +140,8 @@ final class ModuleConnectionManager: ObservableObject {
     }
 
     static func firstIPv4(from path: NWPath) -> String? {
-        // NWPath.ipv4 返回网关 IPv4 地址数组；NWInterface 没有 ipv4 属性
-        for endpoint in path.ipv4 {
+        // NWPath.gateways 返回网关地址列表（[NWEndpoint]），NWPath/NWInterface 均无 ipv4 属性
+        for endpoint in path.gateways {
             switch endpoint {
             case .ipv4(let host):
                 if let host = host { return "\(host)" }

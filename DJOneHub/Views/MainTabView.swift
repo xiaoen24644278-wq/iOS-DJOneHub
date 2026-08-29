@@ -58,40 +58,10 @@ struct MainTabView: View {
     // MARK: - 侧栏布局（iPad / 横屏）
     private var splitLayout: some View {
         NavigationSplitView {
-            List(selection: $selectedTab) {
-                Section {
-                    ForEach(Tab.allCases, id: \.self) { tab in
-                        Button {
-                            selectedTab = tab
-                        } label: {
-                            HStack(spacing: Theme.Space.m) {
-                                Image(systemName: tab.systemImage)
-                                    .frame(width: 24)
-                                    .foregroundStyle(selectedTab == tab ? Theme.accent : .secondary)
-                                Text(tab.rawValue)
-                                    .font(Theme.Typo.body)
-                                    .foregroundStyle(selectedTab == tab ? Theme.accent : .primary)
-                                Spacer()
-                                if selectedTab == tab {
-                                    Image(systemName: "checkmark")
-                                        .font(Theme.Typo.caption)
-                                        .foregroundStyle(Theme.accent)
-                                }
-                            }
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .listRowBackground(
-                            selectedTab == tab
-                                ? Theme.accent.opacity(0.10)
-                                : Color.clear
-                        )
-                    }
-                }
-            }
-            .listStyle(.sidebar)
-            .navigationTitle("DJOneHub")
-            .navigationSplitViewColumnWidth(min: 200, ideal: 220)
+            SidebarList(selectedTab: $selectedTab)
+                .listStyle(.sidebar)
+                .navigationTitle("DJOneHub")
+                .navigationSplitViewColumnWidth(min: 200, ideal: 220)
         } detail: {
             detailContent
                 .id(selectedTab)
@@ -141,6 +111,56 @@ struct MainTabView: View {
         case .settings:
             NavigationStack { SettingsView(viewModel: settingsViewModel) }
         }
+    }
+}
+
+// MARK: - 侧栏列表（独立子视图，避免类型推断超时）
+private struct SidebarList: View {
+    @Binding var selectedTab: MainTabView.Tab
+
+    var body: some View {
+        List(selection: $selectedTab) {
+            Section {
+                ForEach(MainTabView.Tab.allCases, id: \.self) { tab in
+                    SidebarRow(tab: tab, isSelected: selectedTab == tab) {
+                        selectedTab = tab
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - 侧栏行
+private struct SidebarRow: View {
+    let tab: MainTabView.Tab
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            rowContent
+        }
+        .buttonStyle(.plain)
+        .listRowBackground(isSelected ? Theme.accent.opacity(0.10) : Color.clear)
+    }
+
+    private var rowContent: some View {
+        HStack(spacing: Theme.Space.m) {
+            Image(systemName: tab.systemImage)
+                .frame(width: 24)
+                .foregroundStyle(isSelected ? Theme.accent : Color.secondary)
+            Text(tab.rawValue)
+                .font(Theme.Typo.body)
+                .foregroundStyle(isSelected ? Theme.accent : Color.primary)
+            Spacer()
+            if isSelected {
+                Image(systemName: "checkmark")
+                    .font(Theme.Typo.caption)
+                    .foregroundStyle(Theme.accent)
+            }
+        }
+        .contentShape(Rectangle())
     }
 }
 
