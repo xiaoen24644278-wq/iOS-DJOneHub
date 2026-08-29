@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>$(PRODUCT_NAME)</string>
+    <key>CFBundlePackageType</key>
+    <string>DEXT</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>IOKitPersonalities</key>
+    <dict>
+        <key>DJIUSBDriver</key>
+        <dict>
+            <key>CFBundleIdentifier</key>
+            <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+            <key>IOClass</key>
+            <string>IOUserService</string>
+            <key>IOProviderClass</key>
+            <string>IOUSBHostInterface</string>
+            <key>IOUserClass</key>
+            <string>DJIUSBDriver</string>
+            <key>IOUserServerName</key>
+            <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+            <key>idVendor</key>
+            <integer>11427</integer>
+            <key>idProduct</key>
+            <integer>16390</integer>
+            <key>IOResourceMatch</key>
+            <string>IOKit</string>
+        </dict>
+    </dict>
+    <key>OSBundleUsageDescription</key>
+    <string>DJI 4G Module USB Driver</string>
+</dict>
+</plist>

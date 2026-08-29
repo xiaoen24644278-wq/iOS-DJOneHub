@@ -81,15 +81,15 @@ jobs:
             lipo -info "$APP_BINARY" || true
           fi
           
-          # 打包成 IPA
-          zip -r DJOneHub-iOS-v1.0.0.ipa Payload
-          
+          # 打包成 IPA（未签名，用户自行签名）
+          zip -r DJOneHub-iOS-v2.0.0-unsigned.ipa Payload
+
           # 清理
           rm -rf Payload
-          
+
           echo "=== IPA 文件信息 ==="
-          ls -lh DJOneHub-iOS-v1.0.0.ipa
-          unzip -l DJOneHub-iOS-v1.0.0.ipa | head -20
+          ls -lh DJOneHub-iOS-v2.0.0-unsigned.ipa
+          unzip -l DJOneHub-iOS-v2.0.0-unsigned.ipa | head -20
 
       - name: Create dSYM (optional)
         run: |
@@ -105,7 +105,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: DJOneHub-iOS-IPA
-          path: DJOneHub-iOS-v1.0.0.ipa
+          path: DJOneHub-iOS-v2.0.0-unsigned.ipa
           retention-days: 30
 
       - name: Upload dSYM artifact
@@ -122,7 +122,7 @@ jobs:
           echo "## 构建完成 ✅" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- **应用名称**: DJOneHub" >> $GITHUB_STEP_SUMMARY
-          echo "- **版本**: 1.0.0" >> $GITHUB_STEP_SUMMARY
+          echo "- **版本**: 2.0.0" >> $GITHUB_STEP_SUMMARY
           echo "- **配置**: Release" >> $GITHUB_STEP_SUMMARY
           echo "- **目标平台**: iOS (arm64)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

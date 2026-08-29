@@ -3,37 +3,47 @@ import SwiftUI
 // MARK: - 设置主视图
 struct SettingsView: View {
     @StateObject var viewModel: SettingsViewModel
-    
+    @ObservedObject private var connection = ModuleConnectionManager.shared
+
     var body: some View {
         List {
-            // 模块状态卡片
+            // 模块连接（v2：ECM 网卡 + 网关探测诊断）
+            Section {
+                NavigationLink {
+                    ModuleConnectionDetailView()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: connection.isConnected ? "antenna.radiowaves.left.and.right" : "antenna.radiowaves.left.and.right.slash")
+                            .font(.system(size: 20))
+                            .foregroundStyle(connection.isConnected ? Theme.success : Theme.danger)
+                            .frame(width: 40)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(connection.isConnected ? "模块已连接 · \(connection.transport.rawValue)" : "模块未连接")
+                                .font(Theme.Typo.headline)
+                            Text(connectionSubtitle)
+                                .font(Theme.Typo.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+
+                        SignalIndicator(bars: viewModel.moduleStatus.signalBars, isConnected: viewModel.moduleStatus.isConnected)
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+
+            // 模块详细信息
             Section {
                 NavigationLink {
                     ModuleStatusView(viewModel: viewModel)
                 } label: {
-                    HStack(spacing: 12) {
-                        ZStack {
-                            Circle()
-                                .fill(viewModel.moduleStatus.isConnected ? Color.green.opacity(0.15) : Color.red.opacity(0.15))
-                                .frame(width: 44, height: 44)
-                            Image(systemName: viewModel.moduleStatus.isConnected ? "antenna.radiowaves.left.and.right" : "antenna.radiowaves.left.and.right.slash")
-                                .foregroundColor(viewModel.moduleStatus.isConnected ? .green : .red)
-                                .font(.system(size: 20))
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(viewModel.moduleStatus.isConnected ? "模块已连接" : "模块未连接")
-                                .font(.system(size: 16, weight: .medium))
-                            Text(viewModel.moduleStatus.operatorName.isEmpty ? "等待连接大疆4G模块" : viewModel.moduleStatus.operatorName)
-                                .font(.system(size: 13))
-                                .foregroundColor(.secondary)
-                        }
-                        
-                        Spacer()
-                        
-                        SignalIndicator(bars: viewModel.moduleStatus.signalBars, isConnected: viewModel.moduleStatus.isConnected)
-                    }
-                    .padding(.vertical, 4)
+                    NavigationRow(
+                        title: "模块状态详情",
+                        systemImage: "info.circle",
+                        value: viewModel.moduleStatus.operatorName.isEmpty ? "-" : viewModel.moduleStatus.operatorName
+                    )
                 }
             }
             
@@ -59,7 +69,7 @@ struct SettingsView: View {
                     ModuleDiscoveryView()
                 } label: {
                     NavigationRow(
-                        title: "模块连接（网络）",
+                        title: "手动扫描网关（旧）",
                         systemImage: "network",
                         value: NetworkCommunicationManager.shared.isConnected ? "已连接" : "未连接"
                     )
@@ -197,6 +207,110 @@ struct SettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onDisappear {
             viewModel.saveSettings()
+        }
+    }
+
+    private var connectionSubtitle: String {
+        if connection.isConnected {
+            var parts: [String] = []
+            if let ip = connection.gatewayIP {
+                parts.append("\(ip):\(connection.gatewayPort)")
+            }
+            if let ifName = connection.interfaceName {
+                parts.append("接口 \(ifName)")
+            }
+            return parts.joined(separator: " · ")
+        }
+        if case .failed(let reason) = connection.phase {
+            return reason
+        }
+        if connection.isProbing { return "正在通过 ECM 网卡探测模块网关…" }
+        return "插入模块后 app 会自动检测"
+    }
+}
+
+// MARK: - 模块连接详情（v2 诊断页）
+struct ModuleConnectionDetailView: View {
+    @ObservedObject private var connection = ModuleConnectionManager.shared
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Theme.Space.l) {
+                // 连接状态卡
+                MinimalCard {
+                    VStack(alignment: .leading, spacing: Theme.Space.s) {
+                        HStack(spacing: Theme.Space.s) {
+                            StatusDot(state: connection.isConnected ? .ok : .bad)
+                            Text(connection.isConnected ? "已连接" : "未连接")
+                                .font(Theme.Typo.title)
+                            Spacer()
+                            Text(connection.transport.rawValue)
+                                .font(Theme.Typo.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Divider()
+
+                        row("通信方式", connection.transport.rawValue)
+                        row("网关地址", connection.gatewayIP.map { "\($0):\(connection.gatewayPort)" } ?? "-")
+                        row("网络接口", connection.interfaceName ?? "-")
+                        row("本机地址", connection.localIP ?? "-")
+                    }
+                }
+
+                // 操作
+                PrimaryButton(title: connection.isProbing ? "正在检测…" : "重新检测模块") {
+                    Task { await connection.rediscover() }
+                }
+
+                // 诊断提示
+                MinimalCard {
+                    VStack(alignment: .leading, spacing: Theme.Space.s) {
+                        Text("无法识别模块时请检查")
+                            .font(Theme.Typo.headline)
+                        bullet("模块已通过数据线连接（Lightning/USB-C 需支持数据传输）")
+                        bullet("iOS 设置中已允许该 USB 网络适配器（ECM 网卡）")
+                        bullet("模块侧已刷入 DjiModemSuite 固件，提供 TCP/HTTP AT 桥接服务")
+                        bullet("若走 HTTP 模式，保持 WebSocket 事件流可达以接收来电/新短信")
+                    }
+                }
+
+                // 探测日志
+                if !connection.lastProbeLog.isEmpty {
+                    VStack(alignment: .leading, spacing: Theme.Space.s) {
+                        Text("探测日志")
+                            .font(.system(size: 12, weight: .semibold))
+                            .tracking(1.2)
+                            .foregroundStyle(.secondary)
+                        MinimalCard {
+                            Text(connection.lastProbeLog.joined(separator: "\n"))
+                                .font(Theme.Typo.mono)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                }
+            }
+            .padding(Theme.Space.m)
+        }
+        .background(Color(.systemGroupedBackground))
+        .navigationTitle("模块连接")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func row(_ key: String, _ value: String) -> some View {
+        HStack {
+            Text(key).font(Theme.Typo.body).foregroundStyle(.secondary)
+            Spacer()
+            Text(value).font(Theme.Typo.mono)
+        }
+    }
+
+    private func bullet(_ text: String) -> some View {
+        HStack(alignment: .top, spacing: Theme.Space.s) {
+            Text("·")
+            Text(text)
+                .font(Theme.Typo.caption)
+                .foregroundStyle(.secondary)
         }
     }
 }

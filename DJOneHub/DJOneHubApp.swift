@@ -90,7 +90,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
-        // 初始化服务
+        // 初始化服务（v2：模块连接管理器优先，通过 ECM 网卡探测模块）
+        _ = ModuleConnectionManager.shared
         _ = USBCommunicationManager.shared
         _ = ATCommandManager.shared
         _ = CallManager.shared

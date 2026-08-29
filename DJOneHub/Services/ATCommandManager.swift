@@ -22,6 +22,7 @@ final class ATCommandManager: ObservableObject {
     var onStatusUpdate: ((ModuleStatus) -> Void)?
     
     // MARK: - 私有属性
+    private let moduleConnection = ModuleConnectionManager.shared
     private let usbManager = USBCommunicationManager.shared
     private let networkManager = NetworkCommunicationManager.shared
     private var responseBuffer = ""
@@ -29,10 +30,10 @@ final class ATCommandManager: ObservableObject {
     private var commandQueue = DispatchQueue(label: "com.djonehub.atcommand", qos: .userInitiated)
     private var statusUpdateTimer: Timer?
     private var isListeningForURC = false
-    
-    /// 当前使用的通信方式
+
+    /// 当前使用的通信方式：模块连接管理器（ECM TCP/HTTP）优先，其次旧网络桥接，最后 MFi USB
     private var useNetwork: Bool {
-        return networkManager.isConnected
+        return moduleConnection.isConnected || networkManager.isConnected
     }
     
     // MARK: - 命令记录
@@ -52,7 +53,20 @@ final class ATCommandManager: ObservableObject {
     
     // MARK: - USB/网络 回调设置
     private func setupUSBCallbacks() {
-        // USB 回调
+        // 模块连接管理器（v2 主通道：ECM 网卡 → TCP/HTTP AT 桥接）
+        moduleConnection.onDataReceived = { [weak self] data in
+            self?.handleReceivedData(data)
+        }
+        moduleConnection.onConnectionStateChanged = { [weak self] connected in
+            if connected {
+                self?.initializeModule()
+            } else {
+                self?.moduleStatus = .disconnected
+                self?.stopStatusMonitoring()
+            }
+        }
+
+        // USB 回调（MFi 遗留回退）
         usbManager.onDataReceived = { [weak self] data in
             self?.handleReceivedData(data)
         }
@@ -175,11 +189,65 @@ final class ATCommandManager: ObservableObject {
         return response
     }
     
-    // MARK: - 通过网络发送 AT 指令
+    // MARK: - 通过网络发送 AT 指令（优先 v2 模块连接管理器）
     private func sendCommandViaNetwork(_ command: String, timeout: TimeInterval) async throws -> String {
         isCommandExecuting = true
         lastCommand = command
-        
+
+        do {
+            let response: String
+            if moduleConnection.isConnected {
+                switch moduleConnection.transport {
+                case .tcp:
+                    // TCP 直连：发送命令并按行读取响应
+                    moduleConnection.tcpSend(Data((command + "\r\n").utf8))
+                    var text = ""
+                    let deadline = Date().addingTimeInterval(timeout)
+                    while Date() < deadline {
+                        if let chunk = await moduleConnection.tcpReadLine(timeout: 1.0) {
+                            text += chunk
+                            if text.contains("OK\r\n") || text.contains("OK\n") || text.contains("ERROR") {
+                                break
+                            }
+                        }
+                    }
+                    response = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                default:
+                    // HTTP 桥接（DjiModemSuite /api/at）
+                    response = try await moduleConnection.sendATViaHTTP(command, timeout: timeout)
+                }
+            } else {
+                response = try await networkManager.sendATCommand(command, timeout: timeout)
+            }
+
+            isCommandExecuting = false
+            lastResponse = response
+
+            let isSuccess = !response.contains("ERROR")
+            commandHistory.insert(
+                CommandRecord(command: command, response: response, timestamp: Date(), success: isSuccess),
+                at: 0
+            )
+            if commandHistory.count > 100 {
+                commandHistory.removeLast()
+            }
+
+            if response.contains("ERROR") {
+                throw ATError.commandError(response)
+            }
+
+            return response
+        } catch {
+            isCommandExecuting = false
+            throw error
+        }
+    }
+
+    // MARK: - 旧 HTTP 桥接路径（保留）
+    private func sendCommandViaLegacyNetwork(_ command: String, timeout: TimeInterval) async throws -> String {
+        isCommandExecuting = true
+        lastCommand = command
+
         do {
             let response = try await networkManager.sendATCommand(command, timeout: timeout)
             
@@ -264,8 +332,11 @@ final class ATCommandManager: ObservableObject {
     func refreshModuleStatus() async {
         do {
             var status = ModuleStatus.disconnected
-            status.isConnected = useNetwork ? networkManager.isConnected : usbManager.isConnected
-            status.deviceName = useNetwork ? (networkManager.moduleIP ?? "DJI 4G Module") : (usbManager.connectedAccessory?.name ?? "DJI 4G Module")
+            status.isConnected = moduleConnection.isConnected || networkManager.isConnected || usbManager.isConnected
+            status.deviceName = moduleConnection.isConnected
+                ? "DJI 4G Module (\(moduleConnection.transport.rawValue) \(moduleConnection.gatewayIP ?? ""))"
+                : (networkManager.isConnected ? (networkManager.moduleIP ?? "DJI 4G Module")
+                   : (usbManager.connectedAccessory?.name ?? "DJI 4G Module"))
             
             // 读取 IMEI
             let imeiResponse = try await sendCommand("AT+CGSN")
@@ -355,10 +426,24 @@ final class ATCommandManager: ObservableObject {
     func sendSMS(number: String, content: String) async throws {
         _ = try await sendCommand("AT+CMGF=1")
         _ = try await sendCommand("AT+CMGS=\"\(number)\"")
-        // 发送短信内容，以 Ctrl+Z (0x1A) 结束
-        let data = content.data(using: .utf8)! + Data([0x1A])
-        _ = usbManager.send(data: data)
-        // 等待响应
+        // 发送短信内容，以 Ctrl+Z (0x1A) 结尾
+        let payload = content + "\u{1A}"
+
+        if moduleConnection.isConnected {
+            switch moduleConnection.transport {
+            case .tcp:
+                moduleConnection.tcpSend(Data(payload.utf8))
+            default:
+                _ = try await moduleConnection.sendRawViaHTTP(payload, timeout: 30.0)
+            }
+        } else if networkManager.isConnected {
+            _ = networkManager.send(command: payload)
+        } else {
+            guard usbManager.send(command: payload) else {
+                throw ATError.sendFailed
+            }
+        }
+        // 等待发送结果响应
         let _ = try await waitForResponse(timeout: 30.0)
     }
     

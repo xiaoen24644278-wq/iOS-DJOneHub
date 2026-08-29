@@ -1,6 +1,35 @@
-# DJOneHub for iOS
+# DJOneHub for iOS（v2.0.0）
 
 基于 DJOneHub 开源项目移植的 iOS / iPadOS 应用，让大疆第一代 4G 模块成为 iPhone / iPad 上长期可用的实体 SIM 终端。
+
+## v2.0.0 变更说明（关键修复）
+
+### 修复“无法识别 4G 模块”的根本原因
+
+v1.x 把模块连接建立在 `ExternalAccessory`（MFi 协议）上。但 iOS 把大疆 4G 模块枚举为 **USB ECM 以太网卡**，它不是 MFi 设备、不会广播 `com.dji.cellular.at` 等协议字符串，所以 `EAAccessoryManager` 永远收不到它 —— app 长时间停留在“等待连接大疆 4G 模块”。
+
+实际关系是：
+
+```
+模块 ECM 网卡  → iOS 原生支持   → 可以上网（v1 也能）
+模块 AT 控制口  → ExternalAccessory → iOS 不授予 → v1 识别失败
+模块 AT 控制口  → ECM 局域网 TCP/HTTP 桥接 → v2 正确路径
+```
+
+v2 的修复（对应思路图）：
+
+1. **新增 `ModuleConnectionManager`**：用 `NWPathMonitor` 监听网络接口，识别 ECM 网卡（wiredEthernet / usb* / bridge*，排除 Wi-Fi 与蜂窝）；
+2. **网关自动探测**：对 `192.168.225.1` 等候选网关做 TCP 端口（7575/8080/23/5555）与 HTTP `/api/status` 探测，记住上次成功地址；
+3. **双通道 AT**：优先持久 TCP 直连收发 AT；失败退回 DjiModemSuite 的 `/api/at` HTTP 桥接 + `/ws/events` WebSocket（URC 来电/新短信上报）；
+4. **自动重连**：ECM 插拔、网络路径变化时自动重新探测；`ExternalAccessory` 仅保留为 MFi 遗留回退；
+5. **修复网络模式下发短信失败**：v1 的 `sendSMS` 直接写 USB 流，网络模式下必然失败；v2 按当前通道（TCP/HTTP/MFi）正确路由 CMGS 正文 + Ctrl+Z。
+
+### 极简风格 UI 重写
+
+- 新增 `Theme` 设计系统：单一主色、统一间距/圆角/字体，细线分隔，去装饰；
+- 重写 `MainTabView`：按 `horizontalSizeClass` 实时切换 —— regular（iPad 横竖屏、大屏横屏）为 `NavigationSplitView` 侧栏布局，compact（iPhone 竖屏）为 `TabView`；旋转/分屏自动过渡；
+- 顶部改为 `SlimStatusBar` 薄状态条：连接状态点、网关地址、运营商、网络类型、信号一格排开；
+- 设置页新增“模块连接”诊断页：通信方式、网关、接口、本机地址、探测日志、一键重新检测与故障排查提示。
 
 ## 项目简介
 
